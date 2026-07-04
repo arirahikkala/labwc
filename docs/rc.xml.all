@@ -145,6 +145,11 @@
     <drawContents>yes</drawContents>
     <!-- Borders are effectively 8 pixels wide regardless of visual appearance -->
     <minimumArea>8</minimumArea>
+    <!--
+      Nearest: resize the two edges nearest to the cursor
+      Crossing: resize edges as the cursor passes over them (FVWM style)
+    -->
+    <edgeSelection>Nearest</edgeSelection>
 
     <!--
       Set cornerRange to a positive value to increase the size of corner

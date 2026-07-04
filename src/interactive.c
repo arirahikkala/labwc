@@ -8,6 +8,8 @@
 #include "output.h"
 #include "regions.h"
 #include "resize-indicator.h"
+#include "resize-outlines.h"
+#include "ssd.h"
 #include "view.h"
 #include "window-rules.h"
 
@@ -142,6 +144,18 @@ interactive_begin(struct view *view, enum input_mode mode, enum lab_edge edges)
 		}
 
 		/*
+		 * With <resize><edgeSelection> "crossing", the resize may
+		 * start with no edges grabbed. Edges are then grabbed as the
+		 * cursor crosses them; see interactive_resize_grab_edges().
+		 */
+		server.resize_edges_dynamic =
+			(server.resize_edges == LAB_EDGE_NONE);
+		if (server.resize_edges_dynamic) {
+			cursor_shape = LAB_CURSOR_GRAB;
+			break;
+		}
+
+		/*
 		 * If tiled or maximized, reset tiled state and un-maximize
 		 * the axes that are being resized, but keep the same
 		 * geometry as the starting point.
@@ -189,6 +203,76 @@ interactive_begin(struct view *view, enum input_mode mode, enum lab_edge edges)
 	if (rc.window_edge_strength) {
 		edges_calculate_visibility(view);
 	}
+}
+
+void
+interactive_resize_grab_edges(struct view *view)
+{
+	assert(server.input_mode == LAB_INPUT_STATE_RESIZE);
+	assert(view == server.grabbed_view);
+
+	/* Geometry currently shown to the user */
+	struct wlr_box geo = resize_outlines_enabled(view)
+		? view->resize_outlines.view_geo : view->current;
+	/* Edges are crossed at the window frame (including SSD) */
+	struct border margin = ssd_get_margin(view->ssd);
+	double cursor_x = server.seat.cursor->x;
+	double cursor_y = server.seat.cursor->y;
+
+	enum lab_edge new_edges = LAB_EDGE_NONE;
+
+	if (!(server.resize_edges & LAB_EDGES_LEFT_RIGHT)) {
+		double left = geo.x - margin.left;
+		double right = geo.x + geo.width + margin.right;
+		if (cursor_x <= left) {
+			new_edges |= LAB_EDGE_LEFT;
+			server.grab_x = left;
+		} else if (cursor_x >= right) {
+			new_edges |= LAB_EDGE_RIGHT;
+			server.grab_x = right;
+		}
+		if (new_edges & LAB_EDGES_LEFT_RIGHT) {
+			server.grab_box.x = geo.x;
+			server.grab_box.width = geo.width;
+		}
+	}
+	if (!(server.resize_edges & LAB_EDGES_TOP_BOTTOM)) {
+		double top = geo.y - margin.top;
+		double bottom = geo.y + geo.height + margin.bottom;
+		if (cursor_y <= top) {
+			new_edges |= LAB_EDGE_TOP;
+			server.grab_y = top;
+		} else if (cursor_y >= bottom) {
+			new_edges |= LAB_EDGE_BOTTOM;
+			server.grab_y = bottom;
+		}
+		if (new_edges & LAB_EDGES_TOP_BOTTOM) {
+			server.grab_box.y = geo.y;
+			server.grab_box.height = geo.height;
+		}
+	}
+
+	if (new_edges == LAB_EDGE_NONE) {
+		return;
+	}
+	server.resize_edges |= new_edges;
+
+	/*
+	 * If tiled or maximized, reset tiled state and un-maximize
+	 * the axes that are being resized, but keep the same
+	 * geometry as the starting point.
+	 */
+	enum view_axis maximized = view->maximized;
+	if (server.resize_edges & LAB_EDGES_LEFT_RIGHT) {
+		maximized &= ~VIEW_AXIS_HORIZONTAL;
+	}
+	if (server.resize_edges & LAB_EDGES_TOP_BOTTOM) {
+		maximized &= ~VIEW_AXIS_VERTICAL;
+	}
+	view_set_maximized(view, maximized);
+	view_set_untiled(view);
+
+	cursor_set(&server.seat, cursor_get_from_edge(server.resize_edges));
 }
 
 bool

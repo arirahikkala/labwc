@@ -1399,6 +1399,14 @@ entry(xmlNode *node, char *nodename, char *content)
 		rc.resize_corner_range = atoi(content);
 	} else if (!strcasecmp(nodename, "minimumArea.resize")) {
 		rc.resize_minimum_area = MAX(0, atoi(content));
+	} else if (!strcasecmp(nodename, "edgeSelection.resize")) {
+		if (!strcasecmp(content, "Nearest")) {
+			rc.resize_edge_selection = LAB_RESIZE_EDGES_NEAREST;
+		} else if (!strcasecmp(content, "Crossing")) {
+			rc.resize_edge_selection = LAB_RESIZE_EDGES_CROSSING;
+		} else {
+			wlr_log(WLR_ERROR, "Invalid value for <resize edgeSelection />");
+		}
 	} else if (!strcasecmp(nodename, "mouseEmulation.tablet")) {
 		set_bool(content, &rc.tablet.force_mouse_emulation);
 	} else if (!strcasecmp(nodename, "mapToOutput.tablet")) {
@@ -1592,6 +1600,7 @@ rcxml_init(void)
 	rc.resize_draw_contents = true;
 	rc.resize_corner_range = -1;
 	rc.resize_minimum_area = 8;
+	rc.resize_edge_selection = LAB_RESIZE_EDGES_NEAREST;
 
 	rc.workspace_config.popuptime = INT_MIN;
 	rc.workspace_config.min_nr_workspaces = 1;

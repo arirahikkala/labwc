@@ -219,6 +219,12 @@ struct server {
 	/* View geometry when interactive move/resize is requested */
 	struct wlr_box grab_box;
 	enum lab_edge resize_edges;
+	/*
+	 * True when a resize started with no edges grabbed
+	 * (<resize><edgeSelection> "crossing"); edges are then grabbed
+	 * one by one as the cursor crosses them.
+	 */
+	bool resize_edges_dynamic;
 
 	/*
 	 * 'active_view' is generally the view with keyboard-focus, updated with
@@ -437,6 +443,16 @@ void interactive_anchor_to_cursor(struct wlr_box *geo);
 void interactive_set_grab_context(const struct cursor_context *ctx);
 void interactive_begin(struct view *view, enum input_mode mode,
 	enum lab_edge edges);
+
+/**
+ * interactive_resize_grab_edges() - grab window edges crossed by the
+ * cursor during a resize that started with no edges grabbed
+ * (<resize><edgeSelection> "crossing"). Called on cursor motion; once
+ * the cursor passes over an edge of the window frame, that edge is
+ * added to server.resize_edges and the grab context is updated so the
+ * edge sticks to the cursor. At most one edge per axis is grabbed.
+ */
+void interactive_resize_grab_edges(struct view *view);
 void interactive_finish(struct view *view);
 void interactive_cancel(struct view *view);
 

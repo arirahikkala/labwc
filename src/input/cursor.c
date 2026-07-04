@@ -333,10 +333,19 @@ process_cursor_resize(uint32_t time)
 	last_resize_time = time;
 	last_resize_view = server.grabbed_view;
 
+	struct view *view = server.grabbed_view;
+
+	if (server.resize_edges_dynamic) {
+		interactive_resize_grab_edges(view);
+		if (server.resize_edges == LAB_EDGE_NONE) {
+			/* No edge has been crossed by the cursor yet */
+			return;
+		}
+	}
+
 	double dx = server.seat.cursor->x - server.grab_x;
 	double dy = server.seat.cursor->y - server.grab_y;
 
-	struct view *view = server.grabbed_view;
 	struct wlr_box new_view_geo = view->current;
 
 	if (server.resize_edges & LAB_EDGE_TOP) {
@@ -611,6 +620,13 @@ enum lab_edge
 cursor_get_resize_edges(struct wlr_cursor *cursor, const struct cursor_context *ctx)
 {
 	enum lab_edge resize_edges = node_type_to_edges(ctx->type);
+	if (rc.resize_edge_selection == LAB_RESIZE_EDGES_CROSSING) {
+		/*
+		 * Start with no edges grabbed; they are grabbed when the
+		 * cursor crosses them (see interactive_resize_grab_edges())
+		 */
+		return resize_edges;
+	}
 	if (ctx->view && !resize_edges) {
 		struct wlr_box box = ctx->view->current;
 		resize_edges |=

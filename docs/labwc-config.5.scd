@@ -726,6 +726,22 @@ extending outward from the snapped edge.
 	invisible zones just beyond the window that serve as click targets for
 	mouse actions. Default is 8.
 
+*<resize><edgeSelection>* [Nearest|Crossing]
+	Select which window edges are moved by an interactive resize that is
+	not started on a window border or corner (for example a modifier+drag
+	mousebind or the 'Resize' action without a direction).
+
+	The different values mean:
+	- *Nearest* Resize the two edges nearest to the cursor, selected at
+	  the start of the resize.
+	- *Crossing* Start the resize with no edges selected, so that cursor
+	  motion initially does nothing. As soon as the cursor passes over an
+	  edge of the window, that edge starts following the cursor (in the
+	  style of FVWM). At most one edge per axis is picked up during a
+	  resize.
+
+	Default is Nearest.
+
 # INPUT CONFIGURATION
 
 This section describes configuration of input devices including:

@@ -29,6 +29,13 @@ enum resize_indicator_mode {
 	LAB_RESIZE_INDICATOR_NON_PIXEL
 };
 
+enum resize_edge_selection {
+	/* Resize the two edges nearest to the cursor */
+	LAB_RESIZE_EDGES_NEAREST = 0,
+	/* Resize edges as the cursor crosses ("grabs") them */
+	LAB_RESIZE_EDGES_CROSSING,
+};
+
 enum tearing_mode {
 	LAB_TEARING_DISABLED = 0,
 	LAB_TEARING_ENABLED,
@@ -180,6 +187,7 @@ struct rcxml {
 	bool resize_draw_contents;
 	int resize_corner_range;
 	int resize_minimum_area;
+	enum resize_edge_selection resize_edge_selection;
 
 	struct {
 		int popuptime;
